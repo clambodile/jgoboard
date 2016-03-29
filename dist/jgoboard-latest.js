@@ -161,7 +161,7 @@ function process(JGO, div) {
           html += tup[1] + ": <strong>" + info[tup[0]] + "</strong><br>";
       });
 
-      $('#information').html(html);
+      document.getElementById('information').innerHTML=html;
     }
 
 
