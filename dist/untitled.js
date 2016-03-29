@@ -1,3 +1,6 @@
+// TODO: account for if(div.getAttribute('data-jgosgf')) in 
+// auto.js.
+
 function loadSGF(sgf) {
   jrecord = JGO.sgf.load(sgf, true);
 
