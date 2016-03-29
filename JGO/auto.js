@@ -67,7 +67,8 @@ function process(JGO, div) {
   }
 
   if(div.getAttribute('data-jgosgf')){
-    div.innerHTML = '<div style="text-align: center; width: 100%"> \
+    div.innerHTML = '<input style="padding-left: 2em;" id="file" type="file"> \
+    <button class="load">Load file</button>\
     <div style="display: inline-block;"> \
     <div style="float: left;"> \
     <div id="board"></div> \
@@ -86,14 +87,83 @@ function process(JGO, div) {
     <p> Black captures: <strong id="black_captures"></strong>\
     <br> White captures: <strong id="white_captures"></strong> </p>\
     <h2>Comments</h2> <p id="comments"></p> </div> \
-    <div style="clear: both;"></div> </div>)'
+    <div style="clear: both;"></div> </div>'
     var anchors =document.getElementsByTagName("a");
-for(var z =0; z < anchors.length; z++){
-    var elem = anchors[z];   
-    elem.onclick = function(){
+    for(var z =0; z < anchors.length; z++){
+      var elem = anchors[z];   
+      elem.onclick = function(){
         return false;
-    };
-}
+      };
+    }
+    var loaders = document.getElementsByClassName('load');
+    for(var y = 0; y < loaders.length; y++){
+      var elem2 = loaders[y];
+      elem2.onclick = function(){
+        loadFile();
+      }
+    }
+
+    var moveNum = 0, moves = 0, gotoMove = 0;
+    var jrecord = false, jnotifier;
+
+    function move(dir) { // dir=0 has special meaning "beginning"
+      if(!jrecord) return; // disable movement until SGF loaded
+
+      if(dir == 0) {
+        jrecord.first();
+        moveNum = 0;
+      }
+      while(dir < 0) {
+        if(!jrecord.previous()) break;
+        moveNum--; dir++;
+      }
+      while(dir > 0) {
+        if(!jrecord.next()) break;
+        moveNum++; dir--;
+      }
+      updateInfo();
+    }
+
+    function nextVariation() {
+      jrecord.setVariation((jrecord.getVariation() + 1) % jrecord.getVariations());
+    }
+
+    function updateInfo() {
+      var info = jrecord.getCurrentNode().info;
+      document.getElementById('move').innerHTML=moveNum;
+      document.getElementById('comments').innerHTML=info.comment ? info.comment.replace(/\n/g, '<br>') : '';
+      document.getElementById('black_captures').innerHTML=info.captures[JGO.BLACK];
+      document.getElementById('white_captures').innerHTML=info.captures[JGO.WHITE];
+      document.getElementById('variation').innerHTML=jrecord.getVariation()+1;
+      document.getElementById('variations').innerHTML=jrecord.getVariations();
+    }
+
+    function updateGameInfo(info) {
+      var html = "";
+
+      if("black" in info) {
+        html += "Black: <strong>" + info.black;
+        if("blackRank" in info) html += ", " + info.blackRank;
+        html += "</strong><br />";
+      }
+
+      if("white" in info) {
+        html += "White: <strong>" + info.white;
+        if("whiteRank" in info) html += ", " + info.whiteRank;
+        html += "</strong><br />";
+      }
+
+      var additional = [["result", "Result"]];
+
+      $.each(additional, function(i, tup) {
+        if(tup[0] in info)
+          html += tup[1] + ": <strong>" + info[tup[0]] + "</strong><br>";
+      });
+
+      document.getElementById('information').innerHTML=html;
+    }
+
+
     var params = getParams(); // parse URL parameters
     var jboard = new JGO.Board(19, 19), jsetup; // hardcoded size
 
@@ -124,13 +194,13 @@ for(var z =0; z < anchors.length; z++){
       return params;
     }
 
-    function loadURL(url) {
-      $.ajax('http://static.jgoboard.com/get_sgf.php', {
-        dataType: 'jsonp', data: {url: url}, complete: function(resp) {
-          loadSGF(resp.responseJSON);
-        }
-      });
-    }
+    // function loadURL(url) {
+    //   $.ajax('http://static.jgoboard.com/get_sgf.php', {
+    //     dataType: 'jsonp', data: {url: url}, complete: function(resp) {
+    //       loadSGF(resp.responseJSON);
+    //     }
+    //   });
+    // }
 
     function loadSGF(sgf) {
       jrecord = JGO.sgf.load(sgf, true);
@@ -149,26 +219,26 @@ for(var z =0; z < anchors.length; z++){
       notifier.changeBoard(jrecord.getBoard());
       updateGameInfo(jrecord.getRootNode().info);
       moveNum = 0;
-  move(gotoMove); // also updates game info
-  gotoMove = 0;
+      move(gotoMove); // also updates game info
+      gotoMove = 0;
+    }
 
-  function loadFile() {
-    var files = div.jgosgf;
+    function loadFile() {
+      var files = document.getElementById("file").files;
 
+      if(!files || files.length == 0)
+        alert("File loading either not supported or no file selected!");
 
-    if(!files || files.length == 0)
-      alert("File loading either not supported or no file selected!");
+      var reader = new FileReader();
+      reader.onload = function() { loadSGF(reader.result); };
+      reader.readAsText(files[0], "UTF-8");
+    }
     
-    var reader = new FileReader();
-    reader.onload = function() { loadSGF(reader.result); };
-    reader.readAsText(files[0], "UTF-8");
-  }
-  loadFile();
-  loadURL(div.jgosgf);
-}
 
-if('move' in params) gotoMove = parseInt(params.move);
-if('url' in params) loadURL(params.url);
+  // loadURL(div.jgosgf);
+
+  if('move' in params) gotoMove = parseInt(params.move);
+  if('url' in params) loadURL(params.url);
 }
 else{
 
