@@ -67,7 +67,33 @@ function process(JGO, div) {
   }
 
   if(div.getAttribute('data-jgosgf')){
-    div.innerHTML = '<input style="padding-left: 2em;" id="file" type="file"> <button onclick="loadFile();">Load file</button> </p> <div style="text-align: center; width: 100%"> <div style="display: inline-block;"> <div style="float: left;"> <div id="board"></div> <p class="controls" style="width: 500px;"> <a href="#" onclick="move(0); return false;"><i class="fa fa-fast-backward"></i></a> <a href="#" onclick="move(-10); return false;"><i class="fa fa-backward"></i></a> <a href="#" onclick="move(-1); return false;"><i class="fa fa-step-backward"></i></a> <strong id="move">1</strong> / <strong id="moves">1</strong> <a href="#" onclick="move(1); return false;"><i class="fa fa-step-forward"></i></a> <a href="#" onclick="move(10); return false;"><i class="fa fa-forward"></i></a> <a href="#" onclick="move(1000); return false;"><i class="fa fa-fast-forward"></i></a> Variation: <strong id="variation">1</strong> / <strong id="variations">1</strong> <a href="#" onclick="nextVariation(); return false;"><i title="variation" class="fa fa-arrows-v"></i></a> </p> </div> <div id="infopane" style="float: left; padding: 1em; text-align: left;"> <h2>Game information</h2> <p id="information"></p> <p> Black captures: <strong id="black_captures"></strong><br> White captures: <strong id="white_captures"></strong> </p> <h2>Comments</h2> <p id="comments"></p> </div> <div style="clear: both;"></div> </div>)'
+    div.innerHTML = '<div style="text-align: center; width: 100%"> \
+    <div style="display: inline-block;"> \
+    <div style="float: left;"> \
+    <div id="board"></div> \
+    <p class="controls" style="width: 500px;">\
+    <a href="#" onclick="move(0); return false"><<<</a> \
+    <a href="#" onclick="move(-10); return false"><<</a> \
+    <a href="#" onclick="move(-1); return false"><</a> \
+    <strong id="move">1</strong> / <strong id="moves">1</strong> \
+    <a href="#" onclick="move(1); return false">></a> \
+    <a href="#" onclick="move(10); return false">>></a> \
+    <a href="#" onclick="move(1000); return false">>>></a> \
+    Variation: <strong id="variation">1</strong> / <strong id="variations">1</strong> \
+    <a href="#" onclick="nextVariation(); return false;">v</a> </p> </div>\
+    <div id="infopane" style="float: left; padding: 1em; text-align: left;"> \
+    <h2>Game information</h2> <p id="information"></p> \
+    <p> Black captures: <strong id="black_captures"></strong>\
+    <br> White captures: <strong id="white_captures"></strong> </p>\
+    <h2>Comments</h2> <p id="comments"></p> </div> \
+    <div style="clear: both;"></div> </div>)'
+    var anchors =document.getElementsByTagName("a");
+for(var z =0; z < anchors.length; z++){
+    var elem = anchors[z];   
+    elem.onclick = function(){
+        return false;
+    };
+}
     var params = getParams(); // parse URL parameters
     var jboard = new JGO.Board(19, 19), jsetup; // hardcoded size
 
@@ -96,6 +122,14 @@ function process(JGO, div) {
       });
       }
       return params;
+    }
+
+    function loadURL(url) {
+      $.ajax('http://static.jgoboard.com/get_sgf.php', {
+        dataType: 'jsonp', data: {url: url}, complete: function(resp) {
+          loadSGF(resp.responseJSON);
+        }
+      });
     }
 
     function loadSGF(sgf) {
@@ -130,6 +164,7 @@ function process(JGO, div) {
     reader.readAsText(files[0], "UTF-8");
   }
   loadFile();
+  loadURL(div.jgosgf);
 }
 
 if('move' in params) gotoMove = parseInt(params.move);
